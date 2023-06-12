@@ -25,11 +25,15 @@ Build requirements:
 | `4fpm_TESTS` | `OFF` | Build tests |
 
 ### Compiling and Uploading
-If using neovim, the provided [`.nvimrc`](./.nvimrc) sets the
-[`makeprg`](https://neovim.io/doc/user/options.html#'makeprg') option and adds
-a `<C-j>` mapping to auto-build and upload the binary to your board. The
-results of the build and upload commands will be emitted into a new named
-buffer for ease-of-access.
+If using neovim, the provided [`.nvimrc`](./.nvimrc) sets up convenience
+mappings to:
+ - `<C-j>` to build the project; sets the
+   [`makeprg`](https://neovim.io/doc/user/options.html#'makeprg') option and
+   runs the vimscript `make` command to build the project
+ - `<C-u>` to upload the final rom
+
+The results of the build and upload commands will be emitted into new named
+buffers for ease-of-access.
 
 Otherwise, you can manually build the project with the following commands:
 ```sh

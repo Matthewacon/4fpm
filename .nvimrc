@@ -23,3 +23,18 @@ function Build()
  redraw
 endfunction
 nnoremap <C-j> :call Build() <CR>
+
+function Upload()
+ redir @">
+ execute '!' 'cd build && ARDUINO_SERIAL_PORT=/dev/ttyUSB0 cmake --build . -- upload'
+ redir END
+ enew
+ execute 'file '. "Upload ". strftime('%c')
+ put
+ setlocal buftype=nofile
+ setlocal bufhidden=hide
+ setlocal noswapfile
+ setlocal readonly
+ redraw
+endfunction
+nnoremap <C-u> :call Upload() <CR>
