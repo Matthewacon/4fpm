@@ -36,13 +36,13 @@ Otherwise, you can manually build the project with the following commands:
 mkdir build
 cd build
 env CC=clang CXX=clang++ cmake ..
-cmake --build
+cmake --build . -- rom
 ```
 
 And to upload, you can run the following commands:
 ```sh
 cd build
-cmake --build -- upload
+ARDUINO_SERIAL_PORT=/dev/SERIAL_PORT_HERE cmake --build . -- upload
 ```
 
 ### Testing
@@ -59,7 +59,7 @@ env CC=clang CXX=clang++ cmake .. -D4fpm_TESTS=ON
 To build and run the tests, run the following command:
 ```sh
 cd build
-cmake --build -- test
+cmake --build . -- test
 ```
 
 ## License

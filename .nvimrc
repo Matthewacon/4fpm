@@ -7,7 +7,7 @@ set nosmarttab
 set textwidth=80
 
 "Default make command
-set makeprg=rm\ -r\ build;\ mkdir\ -p\ build;\ cd\ build;\ env\ CC=/usr/bin/avr-gcc\ CXX=/usr/bin/avr-g++\ cmake\ ..\ -GNinja;\ ninja\ -j\$((`nproc`\ *\ 2))
+set makeprg=rm\ -r\ build;\ mkdir\ -p\ build;\ cd\ build;\ env\ CC=/usr/bin/avr-gcc\ CXX=/usr/bin/avr-g++\ cmake\ ..\ -GNinja;\ ninja\ -j\$((`nproc`\ *\ 2))\ rom
 
 function Build()
  redir @">

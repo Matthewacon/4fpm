@@ -29,8 +29,8 @@ file(
  GLOB_RECURSE 4fpm_SOURCES
  "src/**.cpp"
 )
-add_executable(4fpm ${4fpm_SOURCES})
-target_include_directories(4fpm PUBLIC include)
+add_executable("${PROJECT_NAME}" ${4fpm_SOURCES})
+target_include_directories("${PROJECT_NAME}" PUBLIC include)
 
 #Arduino board configuration, taken from `boards.txt`. Override as needed
 set(AVR_HOME /usr/share/arduino/hardware/archlinux-arduino)
@@ -51,7 +51,7 @@ set(ARDUINO_BOOTLOADER_FILE atmega/ATmegaBOOT_168_atmega328.hex)
 
 #Default compilation flags
 target_compile_options(
- 4fpm PUBLIC
+ "${PROJECT_NAME}" PUBLIC
   -fno-exceptions
   -ftemplate-backtrace-limit=0
   -Wno-zero-length-array
@@ -60,14 +60,14 @@ target_compile_options(
 #Configuration flags
 set(4fpm_PEDANTIC ON CACHE BOOL "Enable strict compilation flags")
 set(4fpm_DEBUG OFF CACHE BOOL "Enable debug code")
-set(4fpm_LINK_ARDUINO_CORE ON CACHE BOOL "Use the Arduino core library")
+set(4fpm_LINK_ARDUINO_CORE OFF CACHE BOOL "Use the Arduino core library")
 set(4fpm_LINK_AVR_LIBC OFF CACHE BOOL "Use the avr-libc library")
 set(4fpm_TESTS OFF CACHE BOOL "Build tests and add test target")
 
 #Handle strict compilation flags
 if(4fpm_PEDANTIC)
  target_compile_options(
-  4fpm PUBLIC
+  "${PROJECT_NAME}" PUBLIC
    -Wall
    -Wextra
    -Werror
@@ -85,7 +85,7 @@ endif()
 if(4fpm_DEBUG)
  #Debug compiler flags
  target_compile_options(
-  4fpm PUBLIC
+  "${PROJECT_NAME}" PUBLIC
    -D4FPM_DEBUG=1
    -O0
    -g
@@ -98,7 +98,7 @@ if(4fpm_DEBUG)
 else()
  #Non-debug compiler flags
  target_compile_options(
-  4fpm PUBLIC
+  "${PROJECT_NAME}" PUBLIC
    -Os
    -fno-threadsafe-statics
    -fno-devirtualize
@@ -177,12 +177,12 @@ if(4fpm_LINK_ARDUINO_CORE)
   are correctly configured
  ]]
  target_include_directories(
-  4fpm PUBLIC
+  "${PROJECT_NAME}" PUBLIC
   "${ARDUINO_CORE_SOURCE_DIR}"
  )
- target_link_libraries(4fpm arduino_core)
+ target_link_libraries("${PROJECT_NAME}" arduino_core)
  target_compile_options(
-  4fpm PUBLIC
+  "${PROJECT_NAME}" PUBLIC
   ${ARDUINO_CORE_COMPILER_FLAGS}
  )
 endif()
@@ -207,6 +207,78 @@ if(4fpm_TESTS)
  )
 endif()
 
-#TODO: Add avr-objcopy targets to produce final ROM
-#TODO: Add avr-size readout target
-#TODO: Add avrdude upload target
+#Add avr-objcopy targets to produce final ROM
+set(OBJCOPY_EEP_OUTPUT "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.eep")
+add_custom_command(
+ OUTPUT "${OBJCOPY_EEP_OUTPUT}"
+ COMMAND /usr/bin/avr-objcopy
+  -j .eeprom
+  --set-section-flags=.eeprom='alloc,load'
+  --no-change-warnings
+  --change-section-lma .eeprom=0
+  -O ihex
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}"
+  "${OBJCOPY_EEP_OUTPUT}"
+ DEPENDS "${PROJECT_NAME}"
+)
+
+set(OBJCOPY_BIN_OUTPUT "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin")
+add_custom_command(
+ OUTPUT "${OBJCOPY_BIN_OUTPUT}"
+ COMMAND /usr/bin/avr-objcopy
+  -O binary
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}"
+  "${OBJCOPY_BIN_OUTPUT}"
+ DEPENDS "${PROJECT_NAME}"
+)
+
+set(OBJCOPY_HEX_OUTPUT "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex")
+add_custom_command(
+ OUTPUT "${OBJCOPY_HEX_OUTPUT}"
+ COMMAND /usr/bin/avr-objcopy
+  -O ihex
+  -R .eeprom
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}"
+  "${OBJCOPY_HEX_OUTPUT}"
+ DEPENDS "${PROJECT_NAME}"
+)
+
+add_custom_target(
+ avr-size ALL
+ COMMAND /usr/bin/avr-size
+  --mcu="${ARDUINO_CPU}"
+  -C
+  --format=avr
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}"
+ DEPENDS
+  "${OBJCOPY_EEP_OUTPUT}"
+  "${OBJCOPY_BIN_OUTPUT}"
+  "${OBJCOPY_HEX_OUTPUT}"
+  "${PROJECT_NAME}"
+)
+
+#Custom target to produce all artifacts required for avrdude uploads
+add_custom_target(
+ rom
+ DEPENDS
+  "${OBJCOPY_EEP_OUTPUT}"
+  "${OBJCOPY_BIN_OUTPUT}"
+  "${OBJCOPY_HEX_OUTPUT}"
+  avr-size
+)
+
+#Add avrdude upload target
+add_custom_target(
+ upload
+ COMMAND /usr/bin/avrdude
+  -q
+  -V
+  -p "${ARDUINO_CPU}"
+  -D
+  -c arduino
+  -b ${ARDUINO_UPLOAD_SPEED}
+  -P "$$ARDUINO_SERIAL_PORT"
+  -U "flash:w:${OBJCOPY_HEX_OUTPUT}:i"
+ USES_TERMINAL
+ DEPENDS rom
+)
