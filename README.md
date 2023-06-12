@@ -10,7 +10,9 @@ Build requirements:
  - llvm >= 12.0.0
  - avr-gcc >= 12.2.0
  - avr-libc >= 2.1.0
+ - avr-binutils >= 2.40
  - avrdude >= 1.7
+ - arduino-avr-core >= 1.8.3
 
 ## Building
 ### Build Flags
@@ -19,6 +21,7 @@ Build requirements:
 | `4fpm_PEDANTIC` | `ON` | Enables pedantic compilation flags |
 | `4fpm_DEBUG` | `OFF` | Enables debug code |
 | `4fpm_LINK_ANDROID_CORE` | `OFF` | Use the Arduino core libraries instead of building as a free-standing project |
+| `4fpm_LINK_AVR_LIBC` | `OFF` | Link against the Atmel avr-libc library |
 | `4fpm_TESTS` | `OFF` | Build tests |
 
 ### Compiling and Uploading
